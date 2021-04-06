@@ -39,4 +39,3 @@ survey_frequency <- as.data.frame(survey_frequency) %>%
   arrange(desc(Freq))
 
 head(survey_frequency)
-
