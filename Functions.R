@@ -1,4 +1,4 @@
-##### Category Creation #####
+##### CATEGORY CREATION FUNCTIONS #####
 
 # Packages Required:  cleanNlP, magrittr, dplyr
 # Input:              A vector of documents in a corpus
@@ -73,25 +73,18 @@ getTopKeywords <- function(tfidf){
   
   #Sort the keywords
   tfidf_words_identified <- data.frame(
-    keyword <- keywords,
-    tfidf <- tfidf_values
+    keyword = keywords,
+    tfidf = tfidf_values
   ) %>%
     dplyr::arrange(desc(tfidf)) #Sort the keywords in descending order based on importance
   
-  #Get the top ten keywords
-  topTenKeywords <- tfidf_words_identified$keyword[1:10] %>%
-    as.data.frame() %>%
-    dplyr::rename(keyword = ".") %>%
-    dplyr::filter(!is.na(keyword)) #Remove NA values if there are less than 10 keywords
+  return(tfidf_words_identified)
 }
 
 # Required Packages:  None
 # Input:              Principal Components
 # Output:             Best Principal Components
-getBestPrincipalComponents <- function(principalComponents){
-  #Determine the optimal number of principal components
-  optimalNumComponents <- determineNumPrincipalComponents(principalComponents)
-  
+getBestPrincipalComponents <- function(principalComponents, optimalNumComponents){
   #Gets the principal components that should be used
   principalComponentsToUse <- principalComponents$x[,1:optimalNumComponents]
   
@@ -121,3 +114,40 @@ determineNumPrincipalComponents <- function(principalComponents){
   
   return(optimalNumComponents)
 }
+
+# Required Packages:  magritrr, dplyr
+# Input:              Principal Components, Number of Components to Use
+# Output:             Matrix of principal components and which words belong to them
+getPrincipalComponentLoadings <- function(principalComponents, numComponents){
+  #Get the loadings of the the principal components
+  loadings <- principalComponents$rotation[,1:numComponents]
+  
+  #Absolute value of loadings to determine word belongings
+  loadingsAbsVal <- abs(loadings)
+  
+  #Determine which words belongs to which components (Which component are they most heavily loaded onto)
+  wordBelongings <- data.frame(
+    keywords = row.names(loadings),
+    principalComponents = apply(loadingsAbsVal, MARGIN = 1, FUN = which.max)
+  )
+  
+  ## THIS IS INEFFICIENT CODE
+  pcValues <- NULL
+  for(i in 1:nrow(wordBelongings)){
+    principalComponent <- wordBelongings$principalComponents[i]
+    keyword <- wordBelongings$keywords[i]
+    
+    pcValue <- loadings[rownames(loadings)==keyword, principalComponent]
+    
+    pcValues <- rbind(pcValues, pcValue)
+  }
+  
+  wordBelongings$directions <- ifelse(pcValues > 0, "positive", "negative")
+  
+  #Get rid of the row names
+  rownames(wordBelongings) <- NULL
+  
+  return(wordBelongings)
+}
+
+
