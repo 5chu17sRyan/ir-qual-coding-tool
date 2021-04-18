@@ -1,3 +1,19 @@
+# Required Packages:  None
+# Input:              responses
+# Output:             The responses formatted as a vector
+convertResponsesToVector <- function(responses){
+  #Convert responses into a vector
+  vectorOfResponses <- as.vector(responses)
+  
+  #Remove blank responses
+  vectorOfResponses <- vectorOfResponses[vectorOfResponses != ""]
+  
+  #Change names
+  names(vectorOfResponses) <- c(1:length(vectorOfResponses))
+  
+  return(vectorOfResponses)
+}
+
 ##### CATEGORY CREATION FUNCTIONS #####
 
 # Packages Required:  cleanNlP, magrittr, dplyr
@@ -234,4 +250,13 @@ sampleClusterResponses <- function(responseClusters){
   }
   
   return(sampleResponses)
+}
+
+##### SENTIMENT FUNCTIONS #####
+
+# Required Packages:  
+# Input:              survey responses, sentiment calculated for each response
+# Output:
+encodeSentiment <- function(responses, sentiment){
+  
 }
