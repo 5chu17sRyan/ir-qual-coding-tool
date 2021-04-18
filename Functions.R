@@ -42,7 +42,7 @@ calculateTFIDF <- function(tokens){
   minRespondentsPerCategory <- 5
   
   #Gets the number of responses
-  numResponses <- max(tokens$doc_id)
+  numResponses <- max(as.numeric(tokens$doc_id))
   
   #Calculate tfidf matrix
   tfidf <- cleanNLP::cnlp_utils_tfidf(tokens, 
@@ -132,6 +132,7 @@ getPrincipalComponentLoadings <- function(principalComponents, numComponents){
   )
   
   ## THIS IS INEFFICIENT CODE
+  #Determine the direction of the loadings
   pcValues <- NULL
   for(i in 1:nrow(wordBelongings)){
     principalComponent <- wordBelongings$principalComponents[i]
@@ -150,4 +151,87 @@ getPrincipalComponentLoadings <- function(principalComponents, numComponents){
   return(wordBelongings)
 }
 
+# Required Packages:  bios2mds
+# Input:              Principal Components, The number of components to use
+# Output:             The clusters each response belongs tos
+clusterResponses <- function(principalComponents, numComponents){
+  responsesDimReduced <- principalComponents$x[,1:numComponents]
+  
+  #Determine optimal number of clusters
+  num_clusters <- determineNumClusters(responsesDimReduced)
+  
+  #Run kmeans clustering algorithms
+  kmeans <- kmeans(responsesDimReduced, num_clusters)
+  
+  #Which responses belong to which clusters
+  responsesClustered <- kmeans$cluster
+  
+  return(responsesClustered)
+}
 
+# Required Packages:  bios2mds
+# Input:              Things to be clustered
+# Output:             The optimal number of clusters
+determineNumClusters <- function(thingsToBeClustered){
+  #Preparation
+  set.seed(NULL)
+  minClusters <- 2
+  maxClusters <- 10
+  
+  #Calculate silhouette scores for 2-10 clusters
+  sil_score <- bios2mds::sil.score(thingsToBeClustered, nb.clus = c(minClusters:maxClusters))
+  
+  #Calculate the improvement in sil score from one number of clusters to the next
+  sil_score_improvement <- NULL
+  for(i in minClusters:maxClusters){
+    improvement <- 1 - ((1 - sil_score[i]) / (1 - sil_score[i-1]))
+    sil_score_improvement <- c(sil_score_improvement, improvement)
+  }
+  
+  #Select the number of clusters which has the maximum sil score improvement
+  num_clusters <- which.max(sil_score_improvement)
+  
+  return(num_clusters)
+}
+
+# Required Packages:  magrittr, dplyr
+# Input:              Responses, List of clusters corresponding to responses
+# Output:             Data Frame of responses and which cluster they belong to
+pairResponsesWithClusters <- function(responses, clusters){
+  responses <- vectorOfResponses
+  clusters <- kmeansClustering
+  
+  #Turn arguments into data frames
+  dfResponses <- as.data.frame(responses)
+  dfClusters <- as.data.frame(clusters)
+  
+  #Merge the data frames
+  clusteredResponses <- merge(dfResponses, dfClusters, by = "row.names") %>%
+    dplyr::arrange(as.numeric(Row.names)) %>%
+    dplyr::select(-c(Row.names))
+  
+  clusteredResponses$Row.names
+  
+  return(clusteredResponses)
+}
+
+# Required Packages:  magrittr, dplyr
+# Input:              Responses and which cluster they belong to
+# Output:             A sample of five responses for each cluster
+sampleClusterResponses <- function(responseClusters){
+  #Determine the number of clusters
+  numClusters <- max(responseClusters$clusters)
+  
+  #Sample 5 responses from each cluster
+  sampleResponses <- NULL
+  for(i in 1:numClusters){
+    clusterI <- responseClusters %>%
+      dplyr::filter(clusters == i)
+    
+    sampleI <- clusterI[sample(nrow(clusterI), 5), ]
+    
+    sampleResponses <- rbind(sampleResponses, sampleI)
+  }
+  
+  return(sampleResponses)
+}
