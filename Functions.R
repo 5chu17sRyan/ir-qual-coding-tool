@@ -255,8 +255,20 @@ sampleClusterResponses <- function(responseClusters){
 ##### SENTIMENT FUNCTIONS #####
 
 # Required Packages:  
-# Input:              survey responses, sentiment calculated for each response
-# Output:
-encodeSentiment <- function(responses, sentiment){
+# Input:              Survey responses, sentiment calculated for each response
+# Output:             Data frame of survey responses and their sentiment coded as positive or negative
+encodeSentiment <- function(vectorOfResponses, sentiment){
+  #Turn arguments into data frames
+  dfResponses <- as.data.frame(vectorOfResponses)
+  dfSentiment <- as.data.frame(sentiment$ave_sentiment)
   
+  #Code sentiment as positive, negative, or neutral
+  encodedSentiment <- ifelse(dfSentiment > 0, "positive", ifelse(dfSentiment < 0, "negative", "neutral"))
+
+  #Combine with responses
+  responsesWithSentiment <- cbind(dfResponses, encodedSentiment)
+
+  return(responsesWithSentiment)
 }
+
+getExtremeSentiments <- function()
