@@ -139,7 +139,7 @@ codeData <- function(responses){
 
   ##### Report #####
   #Create Rmarkdown Data Cleaning Report
-  rmarkdown::render(input = "testTemplate.Rmd", 
+  rmarkdown::render(input = "Report Template.Rmd", 
                     output_file = sprintf("testOutputDoc.html"),
                     params = list(keywords = topTenKeywords,
                                   loadings = pcLoadings,
